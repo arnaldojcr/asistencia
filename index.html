@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Asistencia</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; background-color: #f4f6f9; }
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    h2 { text-align: center; color: #333; margin-bottom: 20px; }
+    label { font-weight: bold; display: block; margin-bottom: 8px; color: #555; }
+    select { width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; }
+    .btn-group { display: flex; gap: 10px; }
+    button { flex: 1; padding: 14px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; color: white; transition: 0.2s; }
+    .btn-in { background-color: #28a745; }
+    .btn-out { background-color: #dc3545; }
+    button:disabled { background-color: #aaa; cursor: not-allowed; }
+    #status { margin-top: 15px; text-align: center; font-weight: bold; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Control de Asistencia</h2>
+  
+  <label for="empleado">Selecciona tu Nombre:</label>
+  <select id="empleado">
+    <option value="">-- Seleccionar Empleado --</option>
+    <!-- Sustituye o genera dinámicamente con tu nómina actual -->
+    <option value="Jesus Rafael Marcano Perez">Jesus Rafael Marcano Perez</option>
+    <option value="Mario Jose Ynojoza Castillo">Mario Jose Ynojoza Castillo</option>
+    <option value="Gabriel Antonio Almeron Chavez">Gabriel Antonio Almeron Chavez</option>
+    <option value="Carlos Jose Gregorio Colmenarez Talavera">Carlos Jose Gregorio Colmenarez Talavera</option>
+    <option value="Jose Miguel Juarez Castillo">Jose Miguel Juarez Castillo</option>
+    <option value="Jeancarlo Abraham Rangel Cedeño">Jeancarlo Abraham Rangel Cedeño</option>
+    <option value="Eduardo Jose Vargas Cardenas">Eduardo Jose Vargas Cardenas</option>
+    <option value="Diego Rinaldy Materan Sanchez">Diego Rinaldy Materan Sanchez</option>
+  </select>
+
+  <div class="btn-group">
+    <button class="btn-in" onclick="marcarAsistencia('ENTRADA')">Entrada</button>
+    <button class="btn-out" onclick="marcarAsistencia('SALIDA')">Salida</button>
+  </div>
+
+  <div id="status"></div>
+</div>
+
+<script>
+  // Pega aquí la URL desplegada de tu Google Apps Script
+  const SCRIPT_URL = "TU_URL_DE_GOOGLE_APPS_SCRIPT_AQUI";
+
+  function marcarAsistencia(accion) {
+    const empleado = document.getElementById('empleado').value;
+    const statusDiv = document.getElementById('status');
+
+    if (!empleado) {
+      alert("Por favor, selecciona tu nombre antes de marcar.");
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      statusDiv.style.color = "red";
+      statusDiv.innerText = "La geolocalización no es soportada por tu navegador.";
+      return;
+    }
+
+    statusDiv.style.color = "#0056b3";
+    statusDiv.innerText = "Obteniendo ubicación GPS...";
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const payload = {
+          empleado: empleado,
+          accion: accion,
+          latitud: position.coords.latitude,
+          longitud: position.coords.longitude
+        };
+
+        statusDiv.innerText = "Enviando registro...";
+
+        fetch(SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        })
+        .then(() => {
+          statusDiv.style.color = "green";
+          statusDiv.innerText = `¡${accion} registrada con éxito!`;
+          document.getElementById('empleado').value = "";
+        })
+        .catch(error => {
+          statusDiv.style.color = "red";
+          statusDiv.innerText = "Error al guardar el registro.";
+          console.error(error);
+        });
+      },
+      (error) => {
+        statusDiv.style.color = "red";
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            statusDiv.innerText = "Debes activar el GPS y permitir el acceso a la ubicación.";
+            break;
+          default:
+            statusDiv.innerText = "No se pudo obtener la ubicación GPS.";
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+</script>
+
+</body>
+</html>
